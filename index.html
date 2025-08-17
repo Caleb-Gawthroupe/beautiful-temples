@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Temple Picker</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #D2ECFC; }
+  .temple-container { display: flex; justify-content: center; gap: 50px; flex-wrap: wrap; }
+  .temple { cursor: pointer; transition: opacity 0.4s; opacity: 1; }
+  .temple img {
+    width: 600px;
+    height: 450px;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #aaa;
+    display: block;
+    margin: 0 auto;
+  }
+  .fade-out {
+    opacity: 0;
+  }
+  h3 { margin-top: 10px; font-family: cursive; font-size: 20px; }
+  h2 { margin-top: 10px; font-family: cursive; font-size: 26px; }
+  h1 { font-size: 2em; margin-bottom: 40px; font-family: cursive;}
+</style>
+</head>
+<body>
+
+<h1>~ LDS Temples ~</h1>
+<h2>Choose Your Favorite Temple!</h2>
+<div class="temple-container">
+  <div class="temple" id="temple1" onclick="pickTemple(0)">
+    <img src="" alt="Temple 1">
+    <h3></h3>
+  </div>
+  <div class="temple" id="temple2" onclick="pickTemple(1)">
+    <img src="" alt="Temple 2">
+    <h3></h3>
+  </div>
+</div>
+
+<script>
+  let temples = [];
+  let currentTemples = [];
+
+  // Fetch and parse CSV
+  fetch('temple_images.csv')
+    .then(response => response.text())
+    .then(data => {
+      const rows = data.trim().split('\n');
+      // Skip header
+      for (let i = 1; i < rows.length; i++) {
+        const [image, name] = rows[i].split(',');
+        temples.push({ image: image.trim(), name: name.trim() });
+      }
+      displayTemples();
+    })
+    .catch(err => console.error('Error loading CSV:', err));
+
+  function getRandomTemple(excludeIndices=[]) {
+    let index;
+    do {
+      index = Math.floor(Math.random() * temples.length);
+    } while (excludeIndices.includes(index));
+    return index;
+  }
+
+  function displayTemples() {
+    const idx1 = getRandomTemple();
+    const idx2 = getRandomTemple([idx1]);
+    currentTemples = [idx1, idx2];
+
+    setTemple(0, temples[idx1]);
+    setTemple(1, temples[idx2]);
+  }
+
+  function setTemple(templeIdx, templeData) {
+    const templeDiv = document.querySelector(`#temple${templeIdx+1}`);
+    const img = templeDiv.querySelector('img');
+    const h3 = templeDiv.querySelector('h3');
+    templeDiv.classList.remove('fade-out');
+    img.src = templeData.image;
+    img.onload = () => {
+      h3.textContent = templeData.name;
+      templeDiv.classList.remove('fade-out');
+    };
+    h3.textContent = templeData.name;
+  }
+
+  function pickTemple(clicked) {
+    const other = clicked === 0 ? 1 : 0;
+    const templeDiv = document.querySelector(`#temple${other+1}`);
+    const img = templeDiv.querySelector('img');
+    const h3 = templeDiv.querySelector('h3');
+    templeDiv.classList.add('fade-out');
+    h3.textContent = ""; // Clear text until image loads
+
+    const newIndex = getRandomTemple(currentTemples);
+    currentTemples[other] = newIndex;
+
+    // Wait for fade-out, then change image and fade-in
+    setTimeout(() => {
+      img.src = temples[newIndex].image;
+      img.onload = () => {
+        h3.textContent = temples[newIndex].name;
+        templeDiv.classList.remove('fade-out');
+      };
+    }, 400);
+  }
+</script>
+
+</body>
+</html>
